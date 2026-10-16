@@ -43,6 +43,9 @@ button:focus-visible,.tool:focus-within,.dropzone:focus-within{outline:2px solid
 /* Buttons */
 .gradient{display:inline-flex;align-items:center;justify-content:center;gap:8px;background:var(--gradient);color:#fff;border:0;border-radius:6px;padding:10px 22px;font-weight:600;box-shadow:0 2px 6px rgba(255,120,90,.25)}
 .gradient:hover:not(:disabled){filter:brightness(1.04)}
+.send-button{display:inline-flex;align-items:center;justify-content:center;gap:8px;background:#4cc595;color:#fff;border:0;border-radius:5px;padding:10px 16px;font-weight:600}
+.send-button:hover:not(:disabled){background:#3bb583;text-decoration:none}
+.toolbar .send-button{margin:0 8px;padding:7px 12px}
 .secondary{background:#fff;color:#374151;border:1px solid #cfd4da;padding:9px 17px;border-radius:6px}
 .secondary:hover{background:var(--muted)}
 
