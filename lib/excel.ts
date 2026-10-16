@@ -1,5 +1,5 @@
 import type {CellValue} from "exceljs";
-import {validate,type SourceRow} from "./receipts";
+import {round,validate,type SourceRow} from "./receipts";
 
 function val(value:CellValue):unknown{
   if(value&&typeof value==="object"){
@@ -87,9 +87,10 @@ export async function readExcel(data:ArrayBuffer){
     branch:"SUCURSAL",
   };
   for(const [key,heading]of Object.entries(map)){
-    if(!columns[heading]&&key!=="product"&&key!=="businessName"&&key!=="branch")throw new Error("Falta la columna "+heading+" en FINAL.");
+    if(!columns[heading]&&["date","sap","businessName"].includes(key))throw new Error("Falta la columna "+heading+" en FINAL.");
   }
 
+  if(!sheet.getCell("U1").text.trim())throw new Error("Falta la columna U (A DESCONTAR) en FINAL.");
   const rows:SourceRow[]=[];
   const sourceKeys:string[]=[];
   sheet.eachRow((row,index)=>{
@@ -107,16 +108,17 @@ export async function readExcel(data:ArrayBuffer){
       plate:txt(get("plate")),
       sap:txt(get("sap")),
       invoice:txt(get("invoice")),
-      quantity:num(get("quantity")),
-      price:num(get("price")),
-      net:num(get("net")),
+      quantity:1,
+      price:num(val(row.getCell(21).value)),
+      net:num(val(row.getCell(21).value)),
       product:txt(get("product")),
       businessName:txt(get("businessName")),
       branch:txt(get("branch")),
       errors:[],
     };
+    receipt.sourceRows=[index];
+    receipt.period=receipt.date.slice(0,7);
     receipt.errors=validate(receipt);
-    if(typeof get("card")==="number"&&!Number.isSafeInteger(get("card")))receipt.errors.push("TARJETA numérica perdió precisión. Guardarla como texto en el Excel original.");
     rows.push(receipt);
     sourceKeys.push(sourceKey);
   });
@@ -127,5 +129,33 @@ export async function readExcel(data:ArrayBuffer){
     if((counts.get(sourceKeys[index])||0)>1)row.errors.push("Fila duplicada: todas las columnas del Excel son idénticas.");
   });
   if(!rows.length)throw new Error("La hoja FINAL no contiene consumos.");
-  return rows;
+  // All documents share the period of the first transaction in the file.
+  const period=rows[0].date.slice(0,7);
+  const groups=new Map<string,SourceRow[]>();
+  for(const row of rows){
+    const key=(row.businessName??"").trim().replace(/\s+/g," ").toLocaleUpperCase("es-AR");
+    const group=groups.get(key)??[];
+    group.push(row);
+    groups.set(key,group);
+  }
+  return [...groups.values()].map(group=>{
+    const first=group[0];
+    const total=round(group.reduce((sum,row)=>sum+row.net,0),6);
+    const branches=[...new Set(group.map(row=>row.branch??""))];
+    const result:SourceRow={
+      ...first,period,
+      date:group.map(row=>row.date).sort().at(-1)??first.date,
+      time:"00:00:00",card:"",plate:"",
+      invoice:"LIQ-"+period.replace("-","")+"-"+first.sap,
+      product:"Liquidación",
+      branch:branches.length===1?branches[0]:"Varias sucursales: elegir una",
+      quantity:1,price:total,net:total,
+      sourceRows:group.map(row=>row.row),
+      sourceHash:hash64(group.map(row=>row.sourceHash).sort().join("|")),
+      errors:group.flatMap(row=>row.errors.map(error=>"Fila "+row.row+": "+error)),
+    };
+    if(new Set(group.map(row=>row.sap)).size>1)result.errors.push("La razón social tiene distintos proveedores SAP. Corregí el Excel antes de enviar.");
+    result.errors=[...new Set([...result.errors,...validate(result)])];
+    return result;
+  });
 }

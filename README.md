@@ -1,21 +1,23 @@
-# Importador YPF en ruta
+# Importador YPF en ruta sumarizado
 
-Portal de revisión de la hoja FINAL. Cada fila genera una recepción y el envío requiere pulsar Enviar y confirmar el lote.
+Portal de revisión de la hoja FINAL. Agrupa los consumos por razón social y genera una liquidación YPF-R por cada razón social seleccionada. El envío requiere revisar y confirmar el lote.
 
 ## Uso local
 
 Instalar dependencias con npm install. Copiar .env.example a .env.local y completar FINNEGANS_CLIENT_ID y FINNEGANS_CLIENT_SECRET. Ejecutar npm run dev.
 
-## Despliegue en Vercel
+## Reglas de liquidación
 
-Proyecto Next.js estándar. Importar el repositorio en Vercel y definir las mismas dos variables de entorno en Settings → Environment Variables. El portal se embebe como página dentro de Finnegans GO; solo permite ser mostrado en iframes de *.finneg.com.
+- Agrupación por razón social, ignorando mayúsculas y espacios repetidos. Cada grupo conserva las filas de origen para revisión.
+- Importe: suma de la columna física U (A DESCONTAR), incluyendo resultados almacenados de fórmulas. CantidadWorkflow = 1 y Precio = suma de U, con signo positivo y hasta 6 decimales.
+- Descripción: Liquidacion [Razón social] Periodo: MM/AAAA. Todos los grupos usan el mes y año de la primera fila del archivo, aun cuando existan fechas de otros meses.
+- Fecha y fecha base de vencimiento: última fecha de transacción del grupo. Comprobante: LIQ-AAAAMM-[SAP]. Identificación externa: período, SAP y hash de los consumos agrupados.
+- Proveedor: N° SAP. Si una razón social tiene distintos códigos SAP o filas inválidas, todo el grupo queda observado para evitar liquidaciones parciales.
+- Producto fijo 62, condición de pago 15. Dimensiones DIMCTC/1160 y SUCDES elegida en la grilla, al 100 % del total U redondeado a 4 decimales.
+- Si el grupo tiene distintas sucursales, se debe elegir una para la liquidación. Los duplicados exactos se observan y bloquean el grupo.
 
-## Reglas
+El archivo se procesa en el navegador y solo se envían las liquidaciones confirmadas. Las credenciales residen en el servidor. La API rechaza el formato anterior de recepciones individuales; luego de actualizar el portal se debe volver a cargar el Excel.
 
-Proveedor: N° SAP. Fecha: fecha de transacción sin hora. Identificación: fecha_tarjeta_PATENTEpatente, conservando tarjeta completa. Precio: PU negativo redondeado a 6 decimales. Neto: NETO FACTURADO redondeado a 4 decimales, sin recalcularlo a partir de precio y cantidad. Producto fijo 62 para todos los consumos. Dimensiones fijas DIMCTC/1160 y SUCDES/014CDS, ambas al 100%.
+## Validación
 
-Las identificaciones repetidas en el archivo se bloquean y no se agrupan ni se modifican automáticamente. El registro D1 impide repetir una identificación enviada o cuyo resultado esté pendiente/incierto. Los resultados inciertos requieren conciliación con Finnegans; no hay reintentos automáticos. Una respuesta HTTP 2xx sin indicadores conocidos de error se registra como enviada; validar la primera recepción real en Finnegans.
-
-El archivo se procesa en el navegador; solo se envían las filas confirmadas. Las credenciales residen en el servidor. El portal no tiene login propio: cualquiera con la URL puede enviar recepciones.
-
-No se hicieron llamadas reales a Finnegans durante el desarrollo. Pruebas con datos locales y respuestas simuladas.
+Pruebas de agrupación y conciliación de U, JSON, selección y envío con respuestas simuladas. No se crean documentos reales durante las pruebas.

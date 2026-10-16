@@ -12,8 +12,11 @@ const row={
   plate:"AE664ED",
   sap:"152467",
   invoice:"F1",
-  quantity:30.11,
-  price:1457.24,
+  sourceRows:[2,3],
+  period:"2026-08",
+  businessName:"Empresa SA",
+  quantity:1,
+  price:43877.5,
   net:43877.5,
   product:"NAFTA",
   sucdes:"014CDS",errors:[],
@@ -30,7 +33,9 @@ globalThis.fetch=async(input,init)=>{
   assert.equal(data.FechaBaseVencimiento,data.Fecha);
   assert.equal(data.CondicionPagoCodigo,"15");
   assert.equal("OperacionCondicionesPago" in data,false);
-  assert.equal(data.Items[0].Precio,-1457.24);
+  assert.equal(data.Items[0].Precio,43877.5);
+  assert.equal(data.Items[0].CantidadWorkflow,1);
+  assert.equal(data.Descripcion,"Liquidacion Empresa SA Periodo: 08/2026");
   if(mode==="timeout")throw new Error("timeout");
   return Response.json(mode==="error"?{error:"Rejected"}:{TransaccionID:123});
 };

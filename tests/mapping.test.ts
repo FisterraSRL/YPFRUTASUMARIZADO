@@ -2,62 +2,63 @@ import assert from "node:assert/strict";
 import fs from "node:fs/promises";
 import ExcelJS from "exceljs";
 import {readExcel} from "../lib/excel";
-import {payload,validate,identifier,type SourceRow} from "../lib/receipts";
-
-const source=process.argv[2];
-const data=await fs.readFile(source);
-const rows=await readExcel(data.buffer.slice(data.byteOffset,data.byteOffset+data.byteLength));
-assert.equal(rows.length,563);
-assert.equal(rows[0].businessName,"OBREQUE URRUTIA JOSE EDUARDO");
-assert.match(rows[0].time,/^\d{2}:\d{2}:\d{2}$/);
-assert.match(rows[0].sourceHash,/^[0-9a-f]{16}$/);
-
-const firstPayload=payload({...rows[0],sucdes:"014CDS"});
-assert.equal(firstPayload.Fecha,"2026-08-11");
-assert.equal(firstPayload.FechaBaseVencimiento,firstPayload.Fecha);
-assert.equal(firstPayload.Proveedor,"152467");
-assert.match(firstPayload.IdentificacionExterna,/^2026-08-11_\d{6}_70841431002613811_PATENTEAE664ED_LTS30-11_[0-9a-f]{16}$/);
-assert.equal(firstPayload.Items[0].CantidadWorkflow,30.11);
-assert.equal(firstPayload.Items[0].Precio,-1457.237747);
-assert.equal(firstPayload.Items[0].DimensionDistribucion[0].distribucionItems[0].importe,43877.4286);
-assert.equal(firstPayload.NumeroComprobante,"F1420A00275738");
-assert.equal(firstPayload.CondicionPagoCodigo,"15");
-assert.equal("OperacionCondicionesPago" in firstPayload,false);
-assert.equal(firstPayload.Items[0].ProductoCodigo,"62");
-assert(validate({...rows[0],date:"2026-02-30"}).length);
-assert(validate({...rows[0],time:"27:00:00"}).length);
-assert(validate({...rows[0],quantity:NaN}).length);
-assert.throws(()=>payload({...rows[0],sucdes:"014CDS",sap:""}));
-assert.throws(()=>payload(rows[0]),/SUCDES/);
+import {payload,identifier} from "../lib/receipts";
 
 const workbook=new ExcelJS.Workbook();
 const sheet=workbook.addWorksheet("FINAL");
-sheet.addRow(["TARJETA","N° SAP","PATENTE","NRO.FACTURA","FECHA DE TRANSACCION","CANTIDAD LTS","PU","NETO FACTURADO","EXTRA"]);
-sheet.addRow(["70841431002613811",123,"AAA111","F1","01/08/2026 10:00:00",2,3,6,"A"]);
-sheet.addRow(["70841431002613811",123,"AAA111","F1","01/08/2026 12:00:00",2,3,6,"A"]);
-sheet.addRow(["70841431002613811",123,"AAA111","F1","01/08/2026 12:00:00",4,3,12,"A"]);
-sheet.addRow(["70841431002613811",123,"AAA111","F1","01/08/2026 12:00:00",4,3,12,"B"]);
-sheet.addRow(["70841431002613811",123,"AAA111","F1","01/08/2026 12:00:00",4,3,12,"B"]);
-const buffer=await workbook.xlsx.writeBuffer();
-const compared=await readExcel(buffer as unknown as ArrayBuffer);
-assert.equal(compared[0].errors.some(error=>error.includes("duplicada")),false);
-assert.equal(compared[1].errors.some(error=>error.includes("duplicada")),false);
-assert.equal(compared[2].errors.some(error=>error.includes("duplicada")),false);
-assert.equal(compared[3].errors.some(error=>error.includes("duplicada")),true);
-assert.equal(compared[4].errors.some(error=>error.includes("duplicada")),true);
-assert.notEqual(identifier(compared[0]),identifier(compared[1]));
-assert.notEqual(identifier(compared[1]),identifier(compared[2]));
-assert.notEqual(identifier(compared[2]),identifier(compared[3]));
-assert.equal(identifier(compared[3]),identifier(compared[4]));
-
-sheet.getCell("A3").value=70841431002613811;
-const precisionBuffer=await workbook.xlsx.writeBuffer();
-assert((await readExcel(precisionBuffer as unknown as ArrayBuffer))[1].errors.some(error=>error.includes("precisión")));
-
-console.log(JSON.stringify({
-  rows:rows.length,
-  valid:rows.filter(row=>!row.errors.length).length,
-  observed:rows.filter(row=>row.errors.length).length,
-  issues:[...new Set(rows.flatMap(row=>row.errors))],
-  tests:"mapping, date and time, precision, required fields, exact full-row duplicates: passed",
-}));
+sheet.getRow(1).values=["N° SAP","Razon Social","FECHA DE TRANSACCION","Sucursal"];
+sheet.getCell("U1").value="A DESCONTAR";
+function add(sap:string,name:string,date:string,branch:string,total:ExcelJS.CellValue){
+  const row=sheet.addRow([sap,name,date,branch]);
+  row.getCell(21).value=total;
+}
+add("123","Empresa SA","01/08/2026","Norte",10.125);
+add("123"," empresa  sa ","12/08/2026","Norte",{formula:"10+10",result:20});
+add("456","Otra SRL","05/08/2026","Sur","1.234,50");
+const read=async()=>readExcel(await workbook.xlsx.writeBuffer() as unknown as ArrayBuffer);
+let rows=await read();
+assert.equal(rows.length,2);
+assert.deepEqual(rows[0].sourceRows,[2,3]);
+assert.equal(rows[0].net,30.125);
+assert.equal(rows[0].quantity,1);
+assert.deepEqual(rows[0].errors,[]);
+assert.equal(rows[1].net,1234.5);
+const p=payload({...rows[0],sucdes:"014CDS"});
+assert.equal(p.Items[0].CantidadWorkflow,1);
+assert.equal(p.Items[0].Precio,30.125);
+assert.equal(p.Descripcion,"Liquidacion Empresa SA Periodo: 08/2026");
+assert.equal(p.Fecha,"2026-08-12");
+assert.equal(p.Proveedor,"123");
+assert.equal(p.NumeroComprobante,"LIQ-202608-123");
+assert.equal(p.Items[0].DimensionDistribucion[0].distribucionItems[0].importe,30.125);
+assert.notEqual(identifier(rows[0]),identifier(rows[1]));
+assert.throws(()=>payload(rows[0]),/SUCDES/);
+assert.throws(()=>payload({...rows[0],sucdes:"014CDS",quantity:2}),/cantidad/);
+assert.throws(()=>payload({...rows[0],sucdes:"014CDS",errors:["Origen inválido"]}),/Origen/);
+sheet.getCell("C4").value="31/07/2026";
+rows=await read();
+assert.equal(payload({...rows[1],sucdes:"014CDS"}).Descripcion,"Liquidacion Otra SRL Periodo: 08/2026");
+sheet.getCell("A3").value="999";
+rows=await read();
+assert(rows[0].errors.some(e=>e.includes("distintos proveedores")));
+sheet.getCell("A3").value="123";
+sheet.getCell("D3").value="Sur";
+rows=await read();
+assert.match(rows[0].branch??"",/Varias sucursales/);
+sheet.getCell("U3").value="importe inválido";
+rows=await read();
+assert(rows[0].errors.some(e=>e.includes("Fila 3")));
+sheet.getCell("U3").value=20;
+add("123","Empresa SA","01/08/2026","Norte",10.125);
+rows=await read();
+assert(rows[0].errors.some(e=>e.includes("duplicada")));
+if(process.argv[2]){
+  const data=await fs.readFile(process.argv[2]);
+  const real=await readExcel(data.buffer.slice(data.byteOffset,data.byteOffset+data.byteLength));
+  const original=new ExcelJS.Workbook();await original.xlsx.load(data as unknown as ArrayBuffer);
+  let total=0;original.getWorksheet("FINAL")!.eachRow((r,i)=>{if(i>1){const v=r.getCell(21).value;total+=typeof v==="number"?v:Number((v as {result?:number})?.result??0);}});
+  assert(Math.abs(real.reduce((sum,r)=>sum+r.net,0)-total)<0.0001);
+  assert.equal(real.length,160);
+  console.log(JSON.stringify({sourceRows:real.reduce((sum,r)=>sum+(r.sourceRows?.length??0),0),liquidations:real.length,total,observed:real.filter(r=>r.errors.length).length}));
+}
+console.log("PASS: agrupación, columna U, fórmulas, decimales, descripción, cantidad/precio, SAP, sucursales, filas inválidas y duplicados");

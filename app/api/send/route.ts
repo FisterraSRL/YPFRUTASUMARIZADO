@@ -10,7 +10,7 @@ export async function POST(req:Request){
     const row=await req.json() as SourceRow;
     p=payload(row);
   }catch{
-    return json({error:"Datos inválidos. Revisá la fila."},400);
+    return json({error:"Datos inválidos. Revisá la liquidación o volvé a cargar el Excel."},400);
   }
 
   let accessToken:string;

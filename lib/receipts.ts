@@ -15,15 +15,23 @@ export type SourceRow={
   branch?:string;
   sucdes?:string;
   empresa?:string;
+  sourceRows?:number[];
+  period?:string;
   errors:string[];
 };
 
 export const round=(n:number,d:number)=>Math.round((n+Number.EPSILON)*10**d)/10**d;
 
 export function identifier(r:SourceRow){
+  if(r.sourceRows)return "LIQ_"+(r.period??r.date.slice(0,7)).replace("-","")+"_"+r.sap+"_"+r.sourceHash;
   const time=r.time.replaceAll(":","");
   const liters=String(round(r.quantity,6)).replace(".","-");
   return r.date+"_"+time+"_"+r.card+"_PATENTE"+r.plate+"_LTS"+liters+"_"+r.sourceHash;
+}
+
+export function periodLabel(r:SourceRow){
+  const [year,month]=(r.period??r.date.slice(0,7)).split("-");
+  return month+"/"+year;
 }
 
 export function validate(r:SourceRow){
@@ -31,6 +39,17 @@ export function validate(r:SourceRow){
   if(!r||typeof r!=="object")return ["Fila inválida"];
   if(!Number.isInteger(r.row)||r.row<2)errors.push("Fila inválida");
   if(!/^\d{4}-\d{2}-\d{2}$/.test(r.date)||!Number.isFinite(Date.parse(r.date))||new Date(r.date).toISOString().slice(0,10)!==r.date)errors.push("Fecha inválida");
+  if(r.sourceRows){
+    if(!r.sourceRows.length||!r.sourceRows.every(n=>Number.isInteger(n)&&n>=2))errors.push("Filas de origen inválidas");
+    if(!r.businessName?.trim())errors.push("Razón social requerida");
+    if(!/^\d{4}-(0[1-9]|1[0-2])$/.test(r.period??""))errors.push("Período inválido");
+    if(r.quantity!==1)errors.push("La cantidad de la liquidación debe ser 1");
+    if(!Number.isFinite(r.net)||r.net<=0)errors.push("La sumatoria de U debe ser un número positivo");
+    if(r.price!==r.net)errors.push("El precio debe coincidir con la sumatoria de U");
+    if(typeof r.sap!=="string"||!r.sap.trim()||r.sap.length>120)errors.push("N° SAP requerido o inválido");
+    if(!/^[0-9a-f]{16}$/.test(r.sourceHash))errors.push("Identificación de origen inválida");
+    return errors;
+  }
   if(!/^\d{2}:\d{2}:\d{2}$/.test(r.time)){
     errors.push("Hora inválida");
   }else{
@@ -52,7 +71,8 @@ export const DEFAULT_EMPRESA="049CDS";
 export const validSucdes=(code:unknown):code is string=>typeof code==="string"&&/^[A-Z0-9]{1,20}$/.test(code);
 
 export function payload(r:SourceRow){
-  const errors=validate(r);
+  const errors=[...validate(r),...(Array.isArray(r.errors)?r.errors:[])];
+  if(!r.sourceRows)errors.push("Se requiere una liquidación agrupada por razón social. Volvé a cargar el Excel.");
   if(!validSucdes(r.sucdes))errors.push("Sucursal (SUCDES) sin seleccionar");
   if(r.empresa!==undefined&&!validSucdes(r.empresa))errors.push("Empresa inválida");
   if(errors.length)throw new Error(errors.join("; "));
@@ -64,14 +84,14 @@ export function payload(r:SourceRow){
     TransaccionTipo:"OPER",
     TransaccionSubtipoCodigo:"YPF-R",
     Workflow:"Fletes",
-    Descripcion:"TARJETA "+r.card+" PATENTE "+r.plate,
+    Descripcion:"Liquidacion "+r.businessName+" Periodo: "+periodLabel(r),
     NumeroComprobante:r.invoice,
     EmpresaCodigo:r.empresa??DEFAULT_EMPRESA,
     CondicionPagoCodigo:"15",
     Items:[{
       ProductoCodigo:"62",
-      CantidadWorkflow:round(r.quantity,6),
-      Precio:-round(r.price,6),
+      CantidadWorkflow:1,
+      Precio:round(r.net,6),
       DimensionDistribucion:[["DIMCTC","1160"],["SUCDES",r.sucdes]].map(([dimensionCodigo,codigo])=>({
         dimensionCodigo,
         distribucionCodigo:"",
