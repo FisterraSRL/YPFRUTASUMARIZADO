@@ -92,7 +92,11 @@ button:focus-visible,.tool:focus-within,.dropzone:focus-within{outline:2px solid
 .card-number{display:block;color:var(--muted-foreground);font-size:11px}
 .plate{font-size:13px;font-weight:600}
 .business-name{min-width:220px;max-width:320px;white-space:normal!important}
-[data-slot="checkbox"]{border-color:#b6bcc4;width:16px;height:16px;border-radius:2px}
+.table-scroll [data-slot="checkbox"]{width:20px;height:20px;border:1.5px solid #8ea0b6;border-radius:5px;background:#fff;color:#34516f;box-shadow:0 1px 2px rgba(31,56,88,.08)}
+.table-scroll [data-slot="checkbox"][data-checked],.table-scroll [data-slot="checkbox"][aria-checked="mixed"]{border-color:#1f65c8;background:#2b76e5;color:#fff;box-shadow:0 0 0 2px rgba(43,118,229,.18)}
+.table-scroll [data-slot="checkbox-indicator"]{background:transparent}
+.table-scroll [data-slot="checkbox"][aria-checked="mixed"] [data-slot="checkbox-indicator"] svg{display:none}
+.table-scroll [data-slot="checkbox"][aria-checked="mixed"] [data-slot="checkbox-indicator"]::after{content:"";display:block;width:10px;height:2px;border-radius:2px;background:#fff}
 .status{font-size:11px;font-weight:700;color:#176641;background:#e5f6ed;padding:5px 8px;border-radius:6px;white-space:nowrap}
 .status.bad{color:#995f10;background:#fff1d9}
 .status.ok{color:#17663f;background:#e1f5ea}
