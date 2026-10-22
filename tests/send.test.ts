@@ -31,6 +31,7 @@ globalThis.fetch=async(input,init)=>{
   assert.equal(init?.method,"POST");
   const data=JSON.parse(String(init?.body));
   assert.equal(data.FechaBaseVencimiento,data.Fecha);
+  assert.equal(data.Fecha,"2026-08-31");
   assert.equal(data.CondicionPagoCodigo,"15");
   assert.equal("OperacionCondicionesPago" in data,false);
   assert.equal(data.Items[0].Precio,43877.5);

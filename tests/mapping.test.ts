@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs/promises";
 import ExcelJS from "exceljs";
 import {readExcel} from "../lib/excel";
-import {payload,identifier} from "../lib/receipts";
+import {payload,identifier,documentDate} from "../lib/receipts";
 
 const workbook=new ExcelJS.Workbook();
 const sheet=workbook.addWorksheet("FINAL");
@@ -27,7 +27,10 @@ const p=payload({...rows[0],sucdes:"014CDS"});
 assert.equal(p.Items[0].CantidadWorkflow,1);
 assert.equal(p.Items[0].Precio,30.125);
 assert.equal(p.Descripcion,"Liquidacion Empresa SA Periodo: 08/2026");
-assert.equal(p.Fecha,"2026-08-12");
+assert.equal(p.Fecha,"2026-08-31");
+assert.equal(p.FechaBaseVencimiento,"2026-08-31");
+assert.equal(documentDate({...rows[0],period:"2024-02"}),"2024-02-29");
+assert.equal(documentDate({...rows[0],period:"2025-02"}),"2025-02-28");
 assert.equal(p.Proveedor,"123");
 assert.equal(p.NumeroComprobante,"LIQ-202608-123");
 assert.equal(p.Items[0].DimensionDistribucion[0].distribucionItems[0].importe,30.125);
@@ -38,6 +41,7 @@ assert.throws(()=>payload({...rows[0],sucdes:"014CDS",errors:["Origen inválido"
 sheet.getCell("C4").value="31/07/2026";
 rows=await read();
 assert.equal(payload({...rows[1],sucdes:"014CDS"}).Descripcion,"Liquidacion Otra SRL Periodo: 08/2026");
+assert.equal(payload({...rows[1],sucdes:"014CDS"}).Fecha,"2026-08-31");
 sheet.getCell("A3").value="999";
 rows=await read();
 assert(rows[0].errors.some(e=>e.includes("distintos proveedores")));

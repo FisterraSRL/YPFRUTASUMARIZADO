@@ -34,6 +34,14 @@ export function periodLabel(r:SourceRow){
   return month+"/"+year;
 }
 
+export function documentDate(r:SourceRow){
+  const period=r.period??r.date.slice(0,7);
+  if(!/^\d{4}-(0[1-9]|1[0-2])$/.test(period))return "";
+  const [year,month]=period.split("-").map(Number);
+  const lastDay=new Date(Date.UTC(year,month,0)).getUTCDate();
+  return period+"-"+String(lastDay).padStart(2,"0");
+}
+
 export function validate(r:SourceRow){
   const errors:string[]=[];
   if(!r||typeof r!=="object")return ["Fila inválida"];
@@ -76,10 +84,11 @@ export function payload(r:SourceRow){
   if(!validSucdes(r.sucdes))errors.push("Sucursal (SUCDES) sin seleccionar");
   if(r.empresa!==undefined&&!validSucdes(r.empresa))errors.push("Empresa inválida");
   if(errors.length)throw new Error(errors.join("; "));
+  const fecha=documentDate(r);
   return {
     IdentificacionExterna:identifier(r),
-    Fecha:r.date,
-    FechaBaseVencimiento:r.date,
+    Fecha:fecha,
+    FechaBaseVencimiento:fecha,
     Proveedor:r.sap,
     TransaccionTipo:"OPER",
     TransaccionSubtipoCodigo:"YPF-R",
