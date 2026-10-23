@@ -27,6 +27,9 @@ button:focus-visible,.tool:focus-within,.dropzone:focus-within{outline:2px solid
 .round-icon{display:flex;align-items:center;justify-content:center;flex-shrink:0;width:34px;height:34px;border-radius:10px;border:1px solid var(--border);background:#fff;color:var(--primary)}
 .round-icon:hover:not(:disabled){background:#eef4fd;border-color:#b8cdeb}
 .view-version{font-size:11px;color:var(--muted-foreground);background:#fff;border:1px solid var(--border);border-radius:8px;padding:7px 9px}
+.environment-badge{flex-shrink:0;border-radius:999px;padding:6px 11px;font-size:11px;font-weight:800;letter-spacing:.08em}
+.environment-badge.desa{color:#315b91;background:#eaf2ff;border:1px solid #cde0fb}
+.environment-badge.test{color:#805b12;background:#fff4d8;border:1px solid #ecd592}
 .setup-card{background:#fff;border:1px solid var(--border);border-radius:14px;box-shadow:0 8px 28px rgba(31,56,88,.035);overflow:visible}
 .params{display:flex;flex-wrap:wrap;align-items:center;gap:10px;padding:16px 20px;border-bottom:1px solid var(--border)}
 .params-label{display:flex;align-items:center;gap:7px;color:#426b9f;font-size:12px;font-weight:700;margin-right:8px}
@@ -159,7 +162,8 @@ button:focus-visible,.tool:focus-within,.dropzone:focus-within{outline:2px solid
   .sendbar{align-items:stretch;flex-direction:column}
 }
 @media(max-width:600px){
-  .view-title{align-items:flex-start}
+  .view-title{align-items:flex-start;flex-wrap:wrap}
+  .environment-badge{order:3;margin-left:58px}
   .view-version{display:none}
   .round-icon{margin-left:auto}
   .params-label{width:100%}
