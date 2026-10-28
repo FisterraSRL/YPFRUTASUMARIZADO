@@ -9,7 +9,7 @@ Instalar dependencias con npm install. Copiar .env.example a .env.local y comple
 ## Reglas de liquidación
 
 - Agrupación por razón social, ignorando mayúsculas y espacios repetidos. Cada grupo conserva las filas de origen para revisión.
-- Importe: suma de la columna física U (A DESCONTAR), incluyendo resultados almacenados de fórmulas. CantidadWorkflow = 1 y Precio = suma de U, con signo positivo y hasta 6 decimales.
+- Importe: suma positiva de la columna física U (A DESCONTAR), incluyendo resultados almacenados de fórmulas. CantidadWorkflow = 1 y Precio = suma de U con signo negativo y hasta 6 decimales. Los importes de distribución conservan el signo positivo.
 - Descripción: Liquidacion [Razón social] Periodo: MM/AAAA. Todos los grupos usan el mes y año de la primera fila del archivo, aun cuando existan fechas de otros meses.
 - Fecha y fecha base de vencimiento: último día del mes del período de la liquidación. Comprobante: LIQ-AAAAMM-[SAP]. Identificación externa: período, SAP y hash de los consumos agrupados.
 - Proveedor: N° SAP. Si una razón social tiene distintos códigos SAP o filas inválidas, todo el grupo queda observado para evitar liquidaciones parciales.

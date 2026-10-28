@@ -34,7 +34,9 @@ globalThis.fetch=async(input,init)=>{
   assert.equal(data.Fecha,"2026-08-31");
   assert.equal(data.CondicionPagoCodigo,"15");
   assert.equal("OperacionCondicionesPago" in data,false);
-  assert.equal(data.Items[0].Precio,43877.5);
+  assert.equal(data.Items[0].Precio,-43877.5);
+  assert.equal(data.Items[0].DimensionDistribucion[0].distribucionItems[0].importe,43877.5);
+  assert.equal(data.Items[0].DimensionDistribucion[1].distribucionItems[0].importe,43877.5);
   assert.equal(data.Items[0].CantidadWorkflow,1);
   assert.equal(data.Descripcion,"Liquidacion Empresa SA Periodo: 08/2026");
   if(mode==="timeout")throw new Error("timeout");

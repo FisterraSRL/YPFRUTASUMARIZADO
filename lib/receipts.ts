@@ -100,7 +100,7 @@ export function payload(r:SourceRow){
     Items:[{
       ProductoCodigo:"62",
       CantidadWorkflow:1,
-      Precio:round(r.net,6),
+      Precio:-round(r.net,6),
       DimensionDistribucion:[["DIMCTC","1160"],["SUCDES",r.sucdes]].map(([dimensionCodigo,codigo])=>({
         dimensionCodigo,
         distribucionCodigo:"",
