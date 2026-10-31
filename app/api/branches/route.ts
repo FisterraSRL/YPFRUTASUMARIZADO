@@ -1,4 +1,4 @@
-import {json,token} from "@/lib/server";
+import {config,json,token} from "@/lib/server";
 import {parseFinnegansBranches,type Branch} from "@/lib/branches";
 
 // Loaded once per page load by the browser; cached briefly on the server to avoid repeated calls.
@@ -12,7 +12,7 @@ export async function GET(){
     const response=await fetch("https://api.finneg.com/api/empresaSucursal/list?ACCESS_TOKEN="+encodeURIComponent(accessToken));
     const raw=await response.text();
     if(!response.ok)return json({error:"Finnegans respondió HTTP "+response.status+" al listar sucursales: "+raw.slice(0,200)},502);
-    const branches=parseFinnegansBranches(JSON.parse(raw));
+    const branches=parseFinnegansBranches(JSON.parse(raw),config().FINNEGANS_ENV==="PROD"?"PROD":"DESA");
     cached={value:branches,expires:Date.now()+10*60_000};
     return json({branches});
   }catch(error){

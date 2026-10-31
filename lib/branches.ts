@@ -3,7 +3,14 @@ export type Branch={id:number;code:string;name:string;parent:string};
 
 type FinnegansBranch={EmpresaID?:number;codigo?:string;Nombre?:string;nombre?:string;EmpresaPadre?:string;activo?:boolean};
 
-export function parseFinnegansBranches(body:unknown):Branch[]{
+export function parseFinnegansBranches(body:unknown,environment:"PROD"|"DESA"|"TEST"):Branch[]{
+  if(environment!=="PROD"){
+    const legacy=body as {Empresas?:FinnegansBranch[]};
+    return (legacy.Empresas??[])
+      .filter(entry=>entry.codigo&&entry.Nombre&&/CDS/i.test(entry.codigo))
+      .map(entry=>({id:Number(entry.EmpresaID),code:String(entry.codigo).trim(),name:String(entry.Nombre).trim(),parent:String(entry.EmpresaPadre??"").trim()}))
+      .sort((a,b)=>a.name.localeCompare(b.name,"es",{numeric:true}));
+  }
   const entries=Array.isArray(body)?body:
     body&&typeof body==="object"&&Array.isArray((body as {Empresas?:unknown}).Empresas)?(body as {Empresas:unknown[]}).Empresas:null;
   if(!entries)throw new Error("Formato de sucursales no reconocido.");
