@@ -4,7 +4,7 @@ Portal de revisión de la hoja FINAL. Agrupa los consumos por razón social y ge
 
 ## Uso local
 
-Instalar dependencias con npm install. Copiar .env.example a .env.local y completar FINNEGANS_CLIENT_ID y FINNEGANS_CLIENT_SECRET. FINNEGANS_ENV identifica la publicación como DESA o TEST; las credenciales se configuran por separado en cada proyecto de Vercel y nunca se incluyen en GitHub. Ejecutar npm run dev.
+Instalar dependencias con npm install. Copiar .env.example a .env.local y completar FINNEGANS_CLIENT_ID y FINNEGANS_CLIENT_SECRET. FINNEGANS_ENV identifica la publicación como DESA, TEST o PROD; las credenciales se configuran por separado en cada proyecto de Vercel y nunca se incluyen en GitHub. PROD muestra la base CRUZDELSUR. Ejecutar npm run dev.
 
 ## Reglas de liquidación
 

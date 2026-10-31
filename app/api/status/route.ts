@@ -1,1 +1,1 @@
-import {config,json} from "@/lib/server";export async function GET(){const c=config();return json({configured:!!(c.FINNEGANS_CLIENT_ID&&c.FINNEGANS_CLIENT_SECRET),environment:c.FINNEGANS_ENV==="TEST"?"TEST":"DESA"});}
+import {config,json} from "@/lib/server";export async function GET(){const c=config();return json({configured:!!(c.FINNEGANS_CLIENT_ID&&c.FINNEGANS_CLIENT_SECRET),environment:c.FINNEGANS_ENV==="PROD"?"PROD":c.FINNEGANS_ENV==="TEST"?"TEST":"DESA"});}
