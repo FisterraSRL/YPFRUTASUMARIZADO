@@ -19,7 +19,7 @@ const row={
   price:43877.5,
   net:43877.5,
   product:"NAFTA",
-  sucdes:"014CDS",errors:[],
+  sucdes:"014CDS",empresa:"Prueba32",errors:[],
 };
 let calls=0;
 let mode="ok";
@@ -32,6 +32,7 @@ globalThis.fetch=async(input,init)=>{
   const data=JSON.parse(String(init?.body));
   assert.equal(data.FechaBaseVencimiento,data.Fecha);
   assert.equal(data.Fecha,"2026-08-31");
+  assert.equal(data.EmpresaCodigo,"Prueba32");
   assert.equal(data.CondicionPagoCodigo,"15");
   assert.equal("OperacionCondicionesPago" in data,false);
   assert.equal(data.Items[0].Precio,-43877.5);

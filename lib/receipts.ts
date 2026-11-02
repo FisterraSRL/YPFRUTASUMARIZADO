@@ -77,12 +77,13 @@ export function validate(r:SourceRow){
 
 export const DEFAULT_EMPRESA="049CDS";
 export const validSucdes=(code:unknown):code is string=>typeof code==="string"&&/^[A-Z0-9]{1,20}$/.test(code);
+const validEmpresaCodigo=(code:unknown):code is string=>typeof code==="string"&&/^[A-Z0-9]{1,20}$/i.test(code);
 
 export function payload(r:SourceRow){
   const errors=[...validate(r),...(Array.isArray(r.errors)?r.errors:[])];
   if(!r.sourceRows)errors.push("Se requiere una liquidación agrupada por razón social. Volvé a cargar el Excel.");
   if(!validSucdes(r.sucdes))errors.push("Sucursal (SUCDES) sin seleccionar");
-  if(r.empresa!==undefined&&!validSucdes(r.empresa))errors.push("Empresa inválida");
+  if(r.empresa!==undefined&&!validEmpresaCodigo(r.empresa))errors.push("Empresa inválida");
   if(errors.length)throw new Error(errors.join("; "));
   const fecha=documentDate(r);
   return {
